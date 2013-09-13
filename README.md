@@ -43,7 +43,7 @@ web.config.database = web.database(dbn='mysql', user='username', pw='password', 
 
 ## Usage
 
-### rails controller
+### Rails ActiveRecord example
 
 ```ruby
 class BooksController < ApplicationController
@@ -78,7 +78,7 @@ class BooksController < ApplicationController
 end
 ```
 
-### web.py using verecord.py and mvc.py
+### Web.py ActiveRecord example
 
 ```python
 class BooksController(ApplicationController)
