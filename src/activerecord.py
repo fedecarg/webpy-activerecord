@@ -1,4 +1,4 @@
-# orm.py is an extension to the database layer supplied with web.py.
+# activerecord.py is an extension to the database layer supplied with web.py.
 #
 # Copyright (c) 2012 Federico Cargnelutti
 #
