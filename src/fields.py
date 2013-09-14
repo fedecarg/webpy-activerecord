@@ -18,6 +18,7 @@
 # THIS SOFTWARE.
 
 import web
+from activerecord import ModelStorage
 
 class Field(object):
     
@@ -65,7 +66,7 @@ class RelatedField(object):
     def __init__(self, model, field=None):
         self.model = model
         if isinstance(self.model, basestring):
-            self.model = activerecords.get(model)
+            self.model = ModelStorage.get(model)
         self.field = field
 
 
@@ -77,7 +78,8 @@ class ForeignKeyField(RelatedField):
         if not self.field:
             self.field = '%s_id' % self.model.Meta.table
         conditions = {self.model.Meta.pk: getattr(instance, self.field)}
-        return Query(model=self.model, conditions=conditions)[0]
+        return dict(model=self.model, conditions=conditions)[0]
+
 
 class OneToManyField(RelatedField):
     
@@ -87,14 +89,14 @@ class OneToManyField(RelatedField):
         if not self.field:
             self.field = '%s_id' % instance.Meta.table
         conditions = {self.field: getattr(instance, instance.Meta.pk)}
-        return Query(model=self.model, conditions=conditions)
+        return dict(model=self.model, conditions=conditions)
+
 
 class ManyToManyField(RelatedField):
     pass
 
 
-web.config.istest = False
 if __name__ == "__main__":
+    web.config.set('istest', True)
     import doctest
-    web.config.istest = True
     doctest.testmod()

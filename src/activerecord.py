@@ -20,11 +20,6 @@
 import web
 from fields import Field, RelatedField
 
-
-db = web.config.get('database', None)
-ModelStorage = web.utils.Storage()
-
-
 class ActiveRecordMetaclass(type):
     
     def __new__(cls, record_name, bases, dct):
@@ -144,7 +139,7 @@ class ActiveRecord(object):
         elif id and isinstance(id, str):
             return cls.find_by_id(int(id), **params)
         else:
-            return cls.find_all(options, **params)
+            return cls.find_all(options)
     
     
     @classmethod
@@ -165,8 +160,10 @@ class ActiveRecord(object):
         if 'where' in params:
             where = dict(params['where'].items() + where.items())
             del params['where']
-        row = db.select(cls.Meta.table, where=web.db.sqlwhere(where), **params)
-        if web.config.istest: return row
+
+        istest = web.config.get('istest', False)
+        row = db.select(cls.Meta.table, where=web.db.sqlwhere(where), _test=istest, **params)
+
         try:
             return cls(dict(row[0]))
         except:
@@ -189,9 +186,9 @@ class ActiveRecord(object):
             >>> User.find_all(where={'name':'foo'}, limit=5, page=2)
             <sql: "SELECT * FROM user WHERE name = 'foo' ORDER BY id LIMIT 5 OFFSET 5">
         """        
-        opts = cls.merge_options(options)
-        rows = db.select(cls.Meta.table, _test=web.config.istest, **opts)
-        #if web.config.istest: return rows
+        istest = web.config.get('istest', False)
+        defaults = cls.merge_defaults(options)        
+        rows = db.select(cls.Meta.table, _test=istest, **defaults)
         
         records = []
         for row in rows:
@@ -226,11 +223,12 @@ class ActiveRecord(object):
         if not isinstance(ids, list):
             raise ValueError(ids)
         where = 'id IN (%s)' % ', '.join(["'%s'" % n for n in ids])
-        return db.delete(cls.Meta.table, where=where, _test=web.config.istest, **options)
+        istest = web.config.get('istest', False)
+        return db.delete(cls.Meta.table, where=where, _test=istest, **options)
     
     
     @classmethod
-    def merge_options(cls, options, opts={}):
+    def merge_defaults(cls, options, opts={}):
         opts['limit'] = 100 if not 'limit' in options else int(options['limit'])
         opts['offset'] = 0 if options['page'] <= 1 else (options['page'] - 1) * options['limit']
         opts['order'] = 'id ASC' if not 'order' in options else options['order']
@@ -288,7 +286,7 @@ class ActiveRecord(object):
             >>> user.save()
             <sql: "UPDATE users SET name = 'updated' WHERE id = 1">
         """
-        istest = web.config.istest
+        istest = web.config.get('istest', False)
         if not self.Meta.data:
             return False
         elif self.id:
@@ -323,7 +321,7 @@ class ActiveRecord(object):
         """
         if isinstance(where, dict):
             where = web.db.sqlwhere(where)
-        istest = web.config.istest
+        istest = web.config.get('istest', False)
         result = db.select(self.Meta.table, what='COUNT(*) AS count', where=where, _test=istest, **options)
         try:
             return result[0].count
@@ -352,8 +350,13 @@ class Data(dict):
             self[k] = v
             
 
-web.config.istest = False
+db = web.config.get('database', None)
+if not db:
+    raise NameError('database is not defined')
+
+ModelStorage = web.utils.Storage()
+
 if __name__ == "__main__":
+    web.config.set('istest', True)
     import doctest
-    web.config.istest = True
     doctest.testmod()
