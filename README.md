@@ -1,6 +1,6 @@
 # Introduction
 
-activerecord.py provides orm support to the existing [web.py](http://webpy.org/) python framework.
+Activerecord.py provides ORM support to the existing [web.py](http://webpy.org/) python framework.
 
 ## Requirements
 
